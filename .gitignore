@@ -1,0 +1,91 @@
+# Environment variables
+.env
+*.env
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb
+
+# ML Models
+*.h5
+*.pkl
+*.joblib
+*.pt
+*.pth
+*.onnx
+models/saved_models/
+!models/.gitkeep
+
+# Data
+data/raw/
+data/processed/
+data/cache/
+*.csv
+*.parquet
+*.feather
+!data/.gitkeep
+
+# Logs
+logs/
+*.log
+*.out
+
+# Docker
+docker-compose.override.yml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Airflow
+airflow/logs/
+airflow/*.db
+airflow/*.cfg
+airflow/*.pid
+
+# Credentials
+credentials/
+secrets/
+*.key
+*.pem
+*.crt
+
+# Monitoring
+prometheus-data/
+grafana-data/

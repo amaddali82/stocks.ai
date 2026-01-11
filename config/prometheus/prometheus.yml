@@ -1,0 +1,70 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: 'trading-system'
+    environment: 'production'
+
+scrape_configs:
+  # Data Ingestion Service
+  - job_name: 'data-ingestion'
+    static_configs:
+      - targets: ['data-ingestion:8000']
+        labels:
+          service: 'data-ingestion'
+  
+  # Feature Engineering Service
+  - job_name: 'feature-engineering'
+    static_configs:
+      - targets: ['feature-engineering:8000']
+        labels:
+          service: 'feature-engineering'
+  
+  # Prediction Engine
+  - job_name: 'prediction-engine'
+    static_configs:
+      - targets: ['prediction-engine:8001']
+        labels:
+          service: 'prediction-engine'
+  
+  # Order Management System
+  - job_name: 'order-management'
+    static_configs:
+      - targets: ['order-management:8002']
+        labels:
+          service: 'order-management'
+  
+  # Risk Management
+  - job_name: 'risk-management'
+    static_configs:
+      - targets: ['risk-management:8003']
+        labels:
+          service: 'risk-management'
+  
+  # Kafka Exporter
+  - job_name: 'kafka'
+    static_configs:
+      - targets: ['kafka:9092']
+        labels:
+          service: 'kafka'
+  
+  # Redis Exporter
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis:6379']
+        labels:
+          service: 'redis'
+  
+  # TimescaleDB
+  - job_name: 'timescaledb'
+    static_configs:
+      - targets: ['timescaledb:5432']
+        labels:
+          service: 'timescaledb'
+  
+  # MLflow
+  - job_name: 'mlflow'
+    static_configs:
+      - targets: ['mlflow:5000']
+        labels:
+          service: 'mlflow'
