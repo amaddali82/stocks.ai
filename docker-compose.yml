@@ -126,13 +126,6 @@ services:
     restart: unless-stopped
     networks:
       - trading-network
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu]
 
   # Order Management System
   order-management:
