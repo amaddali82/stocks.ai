@@ -6,7 +6,7 @@ python-dotenv==1.0.0
 psycopg2-binary==2.9.9
 sqlalchemy==2.0.23
 TA-Lib==0.4.28
-pandas-ta==0.3.14b0
+pandas-ta
 scipy==1.11.4
 scikit-learn==1.3.2
 vaderSentiment==3.3.2
