@@ -4,6 +4,9 @@ import RecommendationCard from './components/RecommendationCard';
 import Header from './components/Header';
 import SystemStatus from './components/SystemStatus';
 import PredictionChart from './components/PredictionChart';
+import StockTable from './components/StockTable';
+import StockDetailModal from './components/StockDetailModal';
+import OptionsModal from './components/OptionsModal';
 
 function App() {
   const [recommendations, setRecommendations] = useState([]);
@@ -15,6 +18,9 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [lastUpdate, setLastUpdate] = useState(null);
+  const [selectedStock, setSelectedStock] = useState(null);
+  const [selectedOptionsSymbol, setSelectedOptionsSymbol] = useState(null);
+  const [viewMode, setViewMode] = useState('table'); // 'table' or 'cards'
 
   // Mock data for demonstration
   const mockRecommendations = [
@@ -233,6 +239,32 @@ function App() {
           </div>
         )}
 
+        {/* View Toggle */}
+        <div className="flex justify-end mb-4">
+          <div className="bg-white/5 backdrop-blur-xl rounded-lg p-1 border border-white/10">
+            <button
+              onClick={() => setViewMode('table')}
+              className={`px-4 py-2 rounded-lg font-semibold transition-all duration-200 ${
+                viewMode === 'table'
+                  ? 'bg-blue-600 text-white shadow-lg'
+                  : 'text-white/60 hover:text-white hover:bg-white/10'
+              }`}
+            >
+              Table View
+            </button>
+            <button
+              onClick={() => setViewMode('cards')}
+              className={`px-4 py-2 rounded-lg font-semibold transition-all duration-200 ${
+                viewMode === 'cards'
+                  ? 'bg-blue-600 text-white shadow-lg'
+                  : 'text-white/60 hover:text-white hover:bg-white/10'
+              }`}
+            >
+              Card View
+            </button>
+          </div>
+        </div>
+
         {loading ? (
           <div className="flex items-center justify-center h-64">
             <div className="animate-pulse-custom">
@@ -246,16 +278,44 @@ function App() {
           <>
             <PredictionChart recommendations={recommendations} />
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
-              {recommendations.map((rec, index) => (
-                <RecommendationCard 
-                  key={rec.symbol} 
-                  recommendation={rec}
-                  index={index}
+            {viewMode === 'table' ? (
+              <div className="mt-8">
+                <StockTable 
+                  recommendations={recommendations}
+                  onRowClick={(stock) => setSelectedStock(stock)}
                 />
-              ))}
-            </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
+                {recommendations.map((rec, index) => (
+                  <RecommendationCard 
+                    key={rec.symbol} 
+                    recommendation={rec}
+                    index={index}
+                  />
+                ))}
+              </div>
+            )}
           </>
+        )}
+
+        {/* Modals */}
+        {selectedStock && (
+          <StockDetailModal
+            stock={selectedStock}
+            onClose={() => setSelectedStock(null)}
+            onViewOptions={(symbol) => {
+              setSelectedStock(null);
+              setSelectedOptionsSymbol(symbol);
+            }}
+          />
+        )}
+
+        {selectedOptionsSymbol && (
+          <OptionsModal
+            symbol={selectedOptionsSymbol}
+            onClose={() => setSelectedOptionsSymbol(null)}
+          />
         )}
       </div>
     </div>

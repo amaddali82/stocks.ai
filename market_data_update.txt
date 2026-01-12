@@ -1,0 +1,65 @@
+﻿=================================================================
+STOCKS.AI - REAL MARKET DATA UPDATE
+=================================================================
+Updated: January 11, 2026
+
+CURRENT STOCK PRICES (Real-Time):
+---------------------------------
+ AAPL:  $259.37 (was showing $178.20 - CORRECTED)
+ TSLA:  $445.01 (was showing $242.10 - CORRECTED)
+ NVDA:  $184.86 (was showing $184.00 - CORRECTED)
+ GOOGL: $328.57 (was showing $138.90 - CORRECTED)
+ MSFT:  $479.28 (was showing $378.50 - CORRECTED)
+ META:  $653.06 (was showing $348.20 - CORRECTED)
+
+INDEX PRICES (Real-Time):
+-------------------------
+ SPY (S&P 500):     $694.07
+ QQQ (Nasdaq-100):  $626.65
+ DIA (Dow Jones):   $495.02
+
+AVAILABLE API ENDPOINTS:
+------------------------
+1. Stock Predictions:
+   GET http://localhost:8000/api/predictions
+   Returns: AI trading recommendations for all tracked stocks/indices
+
+2. Options Data (NEW):
+   GET http://localhost:8000/api/options/{symbol}
+   Example: http://localhost:8000/api/options/AAPL
+   Returns: Call and Put options with strikes, prices, volume, IV
+
+SUPPORTED SYMBOLS:
+-----------------
+Stocks: AAPL, TSLA, NVDA, GOOGL, MSFT, META
+Indices: SPY, QQQ, DIA
+
+OPTIONS DATA INCLUDES:
+---------------------
+- Strike prices (ATM range)
+- Last price, Bid, Ask
+- Trading volume
+- Open interest
+- Implied volatility
+- Expiration dates
+
+TEST COMMANDS:
+-------------
+# Get stock predictions
+curl http://localhost:8000/api/predictions
+
+# Get AAPL options
+curl http://localhost:8000/api/options/AAPL
+
+# Get TSLA options
+curl http://localhost:8000/api/options/TSLA
+
+# Get SPY (S&P 500) options
+curl http://localhost:8000/api/options/SPY
+
+UI ACCESS:
+---------
+Web Interface: http://localhost:3001
+Displays: All 9 stocks/indices with current prices and recommendations
+
+=================================================================
