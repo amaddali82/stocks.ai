@@ -1,153 +1,180 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import Header from './components/Header';
-import SystemStatus from './components/SystemStatus';
-import OptionsRecommendationCard from './components/OptionsRecommendationCard';
-import OptionsTable from './components/OptionsTable';
-import { TrendingUp, Target, BarChart3, Grid3x3 } from 'lucide-react';
+import TradingLayout from './components/TradingLayout';
+import Watchlist from './components/Watchlist';
+import OptionsChain from './components/OptionsChain';
+import OrderPanel from './components/OrderPanel';
+import Recommendations from './components/Recommendations';
+import MarketOverview from './components/MarketOverview';
+import Portfolio from './components/Portfolio';
 
 function App() {
+  const [activeView, setActiveView] = useState('recommendations');
   const [options, setOptions] = useState([]);
-  const [systemStatus, setSystemStatus] = useState({
-    prediction: 'checking',
-    risk: 'checking',
-    data: 'checking',
-    options: 'checking'
-  });
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [lastUpdate, setLastUpdate] = useState(null);
-  const [viewMode, setViewMode] = useState('table'); // 'table' or 'cards'
+  const [highConfidenceOptions, setHighConfidenceOptions] = useState([]);
+  const [mediumConfidenceOptions, setMediumConfidenceOptions] = useState([]);
+  const [selectedSymbol, setSelectedSymbol] = useState(null);
   const [selectedOption, setSelectedOption] = useState(null);
+  const [showOrderPanel, setShowOrderPanel] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [marketData, setMarketData] = useState({});
+  const [verificationStatus, setVerificationStatus] = useState(null);
+  const [portfolio, setPortfolio] = useState([]);
 
   useEffect(() => {
-    // Check system status
-    checkSystemStatus();
+    loadRecommendations();
+    loadMarketData();
+    checkVerification();
     
-    // Load options recommendations
-    loadOptionsRecommendations();
-    
-    // Refresh every 60 seconds
     const interval = setInterval(() => {
-      checkSystemStatus();
-      loadOptionsRecommendations();
-    }, 60000);
+      loadRecommendations();
+      loadMarketData();
+    }, 30000);
 
     return () => clearInterval(interval);
   }, []);
 
-  const checkSystemStatus = async () => {
-    const status = {
-      prediction: 'offline',
-      risk: 'offline',
-      data: 'offline',
-      options: 'offline'
-    };
-
-    try {
-      await axios.get('/api/data-api/health', { timeout: 2000 });
-      status.data = 'online';
-    } catch (e) {
-      status.data = 'offline';
-    }
-
-    try {
-      await axios.get('/api/risk/health', { timeout: 2000 });
-      status.risk = 'online';
-    } catch (e) {
-      status.risk = 'offline';
-    }
-
-    try {
-      await axios.get('/api/prediction/health', { timeout: 2000 });
-      status.prediction = 'online';
-    } catch (e) {
-      status.prediction = 'offline';
-    }
-
-    try {
-      await axios.get('/api/options/health', { timeout: 2000 });
-      status.options = 'online';
-    } catch (e) {
-      // Fallback to /health endpoint (no /api prefix)
-      try {
-        await axios.get('http://localhost:8004/health', { timeout: 2000 });
-        status.options = 'online';
-      } catch (fallbackError) {
-        status.options = 'offline';
-      }
-    }
-
-    setSystemStatus(status);
-  };
-
-  const loadOptionsRecommendations = async () => {
+  const loadRecommendations = async () => {
     try {
       setLoading(true);
       
-      // Fetch all options recommendations using proxy
-      const response = await axios.get('/api/options/predictions/best', { 
-        timeout: 15000,
-        params: { limit: 20 }
+      const highConfResponse = await axios.get('/api/options/predictions/high-confidence', {
+        params: { limit: 50 },
+        timeout: 15000
       });
       
-      // Handle both array and object with predictions array
-      const optionsData = response.data.predictions || response.data;
+      const mediumConfResponse = await axios.get('/api/options/predictions/medium-confidence', {
+        params: { limit: 100 },
+        timeout: 15000
+      });
       
-      // Ensure we have an array
-      const optionsArray = Array.isArray(optionsData) ? optionsData : [];
+      const allResponse = await axios.get('/api/options/predictions/best', {
+        params: { limit: 30 },
+        timeout: 15000
+      });
       
-      setOptions(optionsArray);
-      setError(null);
-      setLastUpdate(new Date());
+      setHighConfidenceOptions(highConfResponse.data.predictions || []);
+      setMediumConfidenceOptions(mediumConfResponse.data.predictions || []);
+      setOptions(allResponse.data.predictions || []);
+      
       setLoading(false);
-    } catch (apiError) {
-      console.error('Error fetching options data:', apiError);
-      setError('Unable to load options data - Please ensure the options API service is running');
-      setOptions([]); // Reset to empty array on error
+    } catch (error) {
+      console.error('Error loading recommendations:', error);
       setLoading(false);
     }
   };
 
-  const handleRefresh = () => {
-    loadOptionsRecommendations();
-    checkSystemStatus();
+  const loadMarketData = async () => {
+    try {
+      const response = await axios.get('/api/options/predictions/best', {
+        params: { limit: 10 },
+        timeout: 10000
+      });
+      
+      if (response.data.predictions) {
+        const data = {};
+        response.data.predictions.forEach(opt => {
+          data[opt.symbol] = {
+            price: opt.current_price,
+            change: opt.change_percent || 0
+          };
+        });
+        setMarketData(data);
+      }
+    } catch (error) {
+      console.error('Error loading market data:', error);
+    }
+  };
+
+  const checkVerification = async () => {
+    try {
+      const response = await axios.get('/api/options/verify/status', {
+        timeout: 5000
+      });
+      setVerificationStatus(response.data);
+    } catch (error) {
+      console.error('Error checking verification:', error);
+    }
+  };
+
+  const handleSymbolSelect = (symbol) => {
+    setSelectedSymbol(symbol);
+    setActiveView('options');
+  };
+
+  const handleOptionSelect = (option) => {
+    setSelectedOption(option);
+    setShowOrderPanel(true);
+  };
+
+  const handleOrderSubmit = (order) => {
+    console.log('Order submitted:', order);
+    setShowOrderPanel(false);
+    setSelectedOption(null);
+  };
+
+  const handleClosePosition = (position) => {
+    console.log('Closing position:', position);
+    setPortfolio(portfolio.filter(p => p !== position));
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-4xl font-bold text-white mb-2 flex items-center gap-3">
-                <Target className="w-10 h-10 text-blue-400" />
-                Options Recommendations
-              </h1>
-              <p className="text-white/60">
-                AI-powered options predictions with multi-target analysis and confidence scoring
-              </p>
-            </div>
-            <div className="flex items-center gap-4">
-              {lastUpdate && (
-                <div className="text-sm text-white/60">
-                  Last updated: {lastUpdate.toLocaleTimeString()}
-                </div>
-              )}
-              <button
-                onClick={handleRefresh}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl"
-              >
-                Refresh Data
-              </button>
-            </div>
-          </div>
-        </div>
+    <TradingLayout
+      activeView={activeView}
+      onViewChange={setActiveView}
+      verificationStatus={verificationStatus}
+    >
+      {activeView === 'recommendations' && (
+        <Recommendations
+          highConfidence={highConfidenceOptions}
+          mediumConfidence={mediumConfidenceOptions}
+          loading={loading}
+          onSymbolSelect={handleSymbolSelect}
+          onRefresh={loadRecommendations}
+        />
+      )}
+      
+      {activeView === 'watchlist' && (
+        <Watchlist
+          symbols={options.map(o => o.symbol)}
+          marketData={marketData}
+          onSymbolSelect={handleSymbolSelect}
+        />
+      )}
+      
+      {activeView === 'options' && (
+        <OptionsChain
+          symbol={selectedSymbol}
+          onSelectOption={handleOptionSelect}
+        />
+      )}
+      
+      {activeView === 'portfolio' && (
+        <Portfolio
+          positions={portfolio}
+          onClose={handleClosePosition}
+        />
+      )}
+      
+      {activeView === 'market' && (
+        <MarketOverview />
+      )}
+      
+      {showOrderPanel && selectedOption && (
+        <OrderPanel
+          option={selectedOption}
+          onClose={() => {
+            setShowOrderPanel(false);
+            setSelectedOption(null);
+          }}
+          onSubmit={handleOrderSubmit}
+        />
+      )}
+    </TradingLayout>
+  );
+}
 
-        {/* System Status */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <div className={`bg-white/5 backdrop-blur-xl rounded-xl p-4 border ${
+export default App;
             systemStatus.data === 'online' ? 'border-green-500/30' : 'border-red-500/30'
           }`}>
             <div className="flex items-center justify-between">
