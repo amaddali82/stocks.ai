@@ -364,12 +364,17 @@ class OptionsMLPredictor:
     def _create_classification_training_data(self, features: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
         """
         Create synthetic training data for classification
+        Ensures all 3 classes (SELL, HOLD, BUY) are present
         """
         X = features.values
         n_samples = len(X)
         
         # Generate labels based on technical signals
         y = []
+        sell_count = 0
+        buy_count = 0
+        hold_count = 0
+        
         for i in range(n_samples):
             rsi = features['rsi'].iloc[i] if 'rsi' in features.columns else 50
             momentum = features['momentum'].iloc[i] if 'momentum' in features.columns else 0
@@ -377,10 +382,21 @@ class OptionsMLPredictor:
             # Simple rule-based labeling
             if rsi < 30 and momentum > 0:
                 y.append(2)  # BUY
+                buy_count += 1
             elif rsi > 70 and momentum < 0:
                 y.append(0)  # SELL
+                sell_count += 1
             else:
                 y.append(1)  # HOLD
+                hold_count += 1
+        
+        # Ensure at least one sample of each class exists
+        if sell_count == 0:
+            y[0] = 0  # Force first sample to SELL
+        if buy_count == 0:
+            y[-1] = 2  # Force last sample to BUY
+        if hold_count == 0:
+            y[len(y)//2] = 1  # Force middle sample to HOLD
         
         return X, np.array(y)
     
