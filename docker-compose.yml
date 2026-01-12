@@ -273,6 +273,22 @@ services:
     networks:
       - trading-network
 
+  # Web UI
+  ui:
+    build:
+      context: ./services/ui
+      dockerfile: Dockerfile
+    container_name: stocks-ai-ui
+    ports:
+      - "3001:3001"
+    restart: unless-stopped
+    networks:
+      - trading-network
+    depends_on:
+      - prediction-engine
+      - order-management
+      - risk-management
+
 networks:
   trading-network:
     driver: bridge
