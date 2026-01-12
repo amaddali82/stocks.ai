@@ -69,7 +69,13 @@ function App() {
       await axios.get('/api/options/health', { timeout: 2000 });
       status.options = 'online';
     } catch (e) {
-      status.options = 'offline';
+      // Fallback to /health endpoint (no /api prefix)
+      try {
+        await axios.get('http://localhost:8004/health', { timeout: 2000 });
+        status.options = 'online';
+      } catch (fallbackError) {
+        status.options = 'offline';
+      }
     }
 
     setSystemStatus(status);
@@ -80,7 +86,7 @@ function App() {
       setLoading(true);
       
       // Fetch all options recommendations using proxy
-      const response = await axios.get('/api/options/api/predictions/best', { 
+      const response = await axios.get('/api/options/predictions/best', { 
         timeout: 15000,
         params: { limit: 20 }
       });
@@ -88,13 +94,17 @@ function App() {
       // Handle both array and object with predictions array
       const optionsData = response.data.predictions || response.data;
       
-      setOptions(optionsData);
+      // Ensure we have an array
+      const optionsArray = Array.isArray(optionsData) ? optionsData : [];
+      
+      setOptions(optionsArray);
       setError(null);
       setLastUpdate(new Date());
       setLoading(false);
     } catch (apiError) {
       console.error('Error fetching options data:', apiError);
       setError('Unable to load options data - Please ensure the options API service is running');
+      setOptions([]); // Reset to empty array on error
       setLoading(false);
     }
   };

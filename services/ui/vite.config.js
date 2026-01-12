@@ -10,7 +10,7 @@ export default defineConfig({
       '/api/options': {
         target: 'http://options-api:8004',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api\/options/, '')
+        rewrite: (path) => path.replace(/^\/api\/options/, '/api')
       },
       '/api/risk': {
         target: 'http://risk-management:8003',

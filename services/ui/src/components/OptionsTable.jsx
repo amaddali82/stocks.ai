@@ -1,7 +1,37 @@
-import React from 'react';
-import { TrendingUp, DollarSign, Target, Calendar } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { TrendingUp, DollarSign, Target, Calendar, Filter } from 'lucide-react';
 
 function OptionsTable({ options, onRowClick }) {
+  const [filters, setFilters] = useState({
+    symbol: '',
+    type: 'ALL',
+    expiry: 'ALL',
+    risk: 'ALL',
+    minConfidence: 0
+  });
+  const [showFilters, setShowFilters] = useState(false);
+
+  // Get unique values for filters
+  const uniqueSymbols = useMemo(() => {
+    return [...new Set(options.map(o => o.symbol))].sort();
+  }, [options]);
+
+  const uniqueExpiries = useMemo(() => {
+    return [...new Set(options.map(o => o.expiration_date))].sort();
+  }, [options]);
+
+  // Filter options based on selected filters
+  const filteredOptions = useMemo(() => {
+    return options.filter(option => {
+      if (filters.symbol && option.symbol !== filters.symbol) return false;
+      if (filters.type !== 'ALL' && option.option_type !== filters.type) return false;
+      if (filters.expiry !== 'ALL' && option.expiration_date !== filters.expiry) return false;
+      if (filters.risk !== 'ALL' && option.risk_level !== filters.risk) return false;
+      if (option.overall_confidence < filters.minConfidence) return false;
+      return true;
+    });
+  }, [options, filters]);
+
   const getRecommendationColor = (rec) => {
     if (rec.includes('STRONG BUY')) return 'text-green-400 bg-green-500/20';
     if (rec.includes('BUY')) return 'text-green-300 bg-green-500/10';
@@ -29,6 +59,108 @@ function OptionsTable({ options, onRowClick }) {
 
   return (
     <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 overflow-hidden shadow-2xl">
+      {/* Filter Controls */}
+      <div className="border-b border-white/10 p-4">
+        <button
+          onClick={() => setShowFilters(!showFilters)}
+          className="flex items-center gap-2 text-white/70 hover:text-white transition-colors"
+        >
+          <Filter size={18} />
+          <span className="text-sm font-semibold">
+            {showFilters ? 'Hide Filters' : 'Show Filters'}
+          </span>
+          {filteredOptions.length !== options.length && (
+            <span className="ml-2 px-2 py-0.5 bg-blue-500/20 text-blue-300 text-xs rounded-full">
+              {filteredOptions.length} of {options.length}
+            </span>
+          )}
+        </button>
+
+        {showFilters && (
+          <div className="mt-4 grid grid-cols-1 md:grid-cols-5 gap-4">
+            {/* Symbol Filter */}
+            <div>
+              <label className="block text-xs text-white/50 mb-1">Symbol</label>
+              <select
+                value={filters.symbol}
+                onChange={(e) => setFilters({ ...filters, symbol: e.target.value })}
+                className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                style={{ color: 'white' }}
+              >
+                <option value="" style={{ backgroundColor: '#1a1a2e', color: 'white' }}>All Symbols</option>
+                {uniqueSymbols.map(sym => (
+                  <option key={sym} value={sym} style={{ backgroundColor: '#1a1a2e', color: 'white' }}>{sym}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Type Filter */}
+            <div>
+              <label className="block text-xs text-white/50 mb-1">Type</label>
+              <select
+                value={filters.type}
+                onChange={(e) => setFilters({ ...filters, type: e.target.value })}
+                className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                style={{ color: 'white' }}
+              >
+                <option value="ALL" style={{ backgroundColor: '#1a1a2e', color: 'white' }}>All Types</option>
+                <option value="CALL" style={{ backgroundColor: '#1a1a2e', color: 'white' }}>CALL</option>
+                <option value="PUT" style={{ backgroundColor: '#1a1a2e', color: 'white' }}>PUT</option>
+              </select>
+            </div>
+
+            {/* Expiry Filter */}
+            <div>
+              <label className="block text-xs text-white/50 mb-1">Expiry Date</label>
+              <select
+                value={filters.expiry}
+                onChange={(e) => setFilters({ ...filters, expiry: e.target.value })}
+                className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                style={{ color: 'white' }}
+              >
+                <option value="ALL" style={{ backgroundColor: '#1a1a2e', color: 'white' }}>All Dates</option>
+                {uniqueExpiries.map(exp => (
+                  <option key={exp} value={exp} style={{ backgroundColor: '#1a1a2e', color: 'white' }}>{exp}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Risk Filter */}
+            <div>
+              <label className="block text-xs text-white/50 mb-1">Risk Level</label>
+              <select
+                value={filters.risk}
+                onChange={(e) => setFilters({ ...filters, risk: e.target.value })}
+                className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                style={{ color: 'white' }}
+              >
+                <option value="ALL" style={{ backgroundColor: '#1a1a2e', color: 'white' }}>All Risks</option>
+                <option value="LOW" style={{ backgroundColor: '#1a1a2e', color: 'white' }}>LOW</option>
+                <option value="MEDIUM" style={{ backgroundColor: '#1a1a2e', color: 'white' }}>MEDIUM</option>
+                <option value="HIGH" style={{ backgroundColor: '#1a1a2e', color: 'white' }}>HIGH</option>
+              </select>
+            </div>
+
+            {/* Confidence Filter */}
+            <div>
+              <label className="block text-xs text-white/50 mb-1">Min Confidence</label>
+              <select
+                value={filters.minConfidence}
+                onChange={(e) => setFilters({ ...filters, minConfidence: parseFloat(e.target.value) })}
+                className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                style={{ color: 'white' }}
+              >
+                <option value="0" style={{ backgroundColor: '#1a1a2e', color: 'white' }}>Any</option>
+                <option value="0.5" style={{ backgroundColor: '#1a1a2e', color: 'white' }}>≥50%</option>
+                <option value="0.6" style={{ backgroundColor: '#1a1a2e', color: 'white' }}>≥60%</option>
+                <option value="0.7" style={{ backgroundColor: '#1a1a2e', color: 'white' }}>≥70%</option>
+                <option value="0.8" style={{ backgroundColor: '#1a1a2e', color: 'white' }}>≥80%</option>
+              </select>
+            </div>
+          </div>
+        )}
+      </div>
+
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
@@ -66,7 +198,7 @@ function OptionsTable({ options, onRowClick }) {
             </tr>
           </thead>
           <tbody className="divide-y divide-white/5">
-            {options.map((option, index) => (
+            {filteredOptions.map((option, index) => (
               <tr
                 key={index}
                 onClick={() => onRowClick && onRowClick(option)}
@@ -139,6 +271,13 @@ function OptionsTable({ options, onRowClick }) {
         </table>
       </div>
 
+      {filteredOptions.length === 0 && options.length > 0 && (
+        <div className="text-center py-12">
+          <div className="text-white/50 text-lg">No options match the selected filters</div>
+          <div className="text-white/30 text-sm mt-2">Try adjusting your filter criteria</div>
+        </div>
+      )}
+      
       {options.length === 0 && (
         <div className="text-center py-12">
           <div className="text-white/50 text-lg">No options data available</div>
