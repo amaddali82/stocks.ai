@@ -64,8 +64,8 @@ function App() {
       symbol: 'NVDA',
       action: 'BUY',
       confidence: 0.92,
-      targetPrice: 520.00,
-      currentPrice: 485.30,
+      targetPrice: 195.00,
+      currentPrice: 184.00,
       prediction: 'very_bullish',
       modelSignals: {
         lstm: 0.91,
