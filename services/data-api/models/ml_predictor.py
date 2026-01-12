@@ -173,17 +173,31 @@ class OptionsMLPredictor:
             prediction = self.rf_classifier.predict(X_current)[0]
             probabilities = self.rf_classifier.predict_proba(X_current)[0]
             
-            actions = ['SELL', 'HOLD', 'BUY']
+            # Handle 2 or 3 class predictions
+            n_classes = len(probabilities)
+            if n_classes == 2:
+                # Only 2 classes predicted (e.g., HOLD and BUY)
+                actions = ['HOLD', 'BUY']
+                probs_dict = {
+                    'BUY': float(probabilities[1]) if len(probabilities) > 1 else 0.33,
+                    'HOLD': float(probabilities[0]),
+                    'SELL': 0.0
+                }
+            else:
+                # All 3 classes
+                actions = ['SELL', 'HOLD', 'BUY']
+                probs_dict = {
+                    'BUY': float(probabilities[2]) if len(probabilities) > 2 else float(probabilities[-1]),
+                    'HOLD': float(probabilities[1]) if len(probabilities) > 1 else float(probabilities[0]),
+                    'SELL': float(probabilities[0])
+                }
+            
             confidence = float(max(probabilities))
             
             return {
-                'action': actions[prediction],
+                'action': actions[min(prediction, len(actions)-1)],
                 'confidence': confidence,
-                'probabilities': {
-                    'BUY': float(probabilities[2]),
-                    'HOLD': float(probabilities[1]),
-                    'SELL': float(probabilities[0])
-                },
+                'probabilities': probs_dict,
                 'model': 'RandomForest'
             }
             
