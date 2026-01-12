@@ -22,16 +22,19 @@ app.add_middleware(
 )
 
 # Stock symbols to track
-TRACKED_SYMBOLS = ['AAPL', 'TSLA', 'NVDA', 'GOOGL', 'MSFT', 'META']
+TRACKED_SYMBOLS = ['AAPL', 'TSLA', 'NVDA', 'GOOGL', 'MSFT', 'META', 'SPY', 'QQQ', 'DIA']
 
-# Fallback prices (updated as of Jan 2026)
+# Fallback prices (current market prices as of Jan 11, 2026)
 FALLBACK_PRICES = {
-    'AAPL': 178.20,
-    'TSLA': 242.10,
-    'NVDA': 184.00,
-    'GOOGL': 138.90,
-    'MSFT': 378.50,
-    'META': 348.20
+    'AAPL': 259.37,
+    'TSLA': 445.01,
+    'NVDA': 184.86,
+    'GOOGL': 328.57,
+    'MSFT': 479.28,
+    'META': 653.06,
+    'SPY': 694.07,
+    'QQQ': 626.65,
+    'DIA': 495.02
 }
 
 def calculate_rsi(prices, period=14):
@@ -157,6 +160,112 @@ async def root():
 async def health():
     return {"status": "healthy", "timestamp": datetime.now().isoformat()}
 
+@app.get("/api/options/{symbol}")
+async def get_options(symbol: str):
+    """Get options data for a symbol"""
+    try:
+        symbol_upper = symbol.upper()
+        current_price = FALLBACK_PRICES.get(symbol_upper, 100.0)
+        
+        # Try to fetch real-time data
+        try:
+            ticker = yf.Ticker(symbol_upper)
+            hist = ticker.history(period="1d", timeout=10)
+            if not hist.empty:
+                current_price = float(hist['Close'].iloc[-1])
+                logger.info(f"Got real price for {symbol_upper}: ${current_price}")
+        except Exception as e:
+            logger.info(f"Using fallback price for {symbol_upper}: {e}")
+        
+        # Try to get options data
+        try:
+            ticker = yf.Ticker(symbol_upper)
+            expirations = ticker.options
+            
+            if expirations:
+                # Get options chain for nearest expiration
+                opt_chain = ticker.option_chain(expirations[0])
+                calls = opt_chain.calls
+                puts = opt_chain.puts
+                
+                # Filter for ATM options
+                atm_calls = calls[calls['strike'].between(current_price * 0.90, current_price * 1.10)].head(10)
+                atm_puts = puts[puts['strike'].between(current_price * 0.90, current_price * 1.10)].head(10)
+                
+                return {
+                    "symbol": symbol_upper,
+                    "currentPrice": round(current_price, 2),
+                    "expirationDate": expirations[0],
+                    "totalExpirations": len(expirations),
+                    "calls": [
+                        {
+                            "strike": float(row['strike']),
+                            "lastPrice": float(row['lastPrice']),
+                            "bid": float(row['bid']) if 'bid' in row else 0,
+                            "ask": float(row['ask']) if 'ask' in row else 0,
+                            "volume": int(row['volume']) if 'volume' in row and not pd.isna(row['volume']) else 0,
+                            "openInterest": int(row['openInterest']) if 'openInterest' in row and not pd.isna(row['openInterest']) else 0,
+                            "impliedVolatility": float(row['impliedVolatility']) if 'impliedVolatility' in row else 0
+                        }
+                        for _, row in atm_calls.iterrows()
+                    ],
+                    "puts": [
+                        {
+                            "strike": float(row['strike']),
+                            "lastPrice": float(row['lastPrice']),
+                            "bid": float(row['bid']) if 'bid' in row else 0,
+                            "ask": float(row['ask']) if 'ask' in row else 0,
+                            "volume": int(row['volume']) if 'volume' in row and not pd.isna(row['volume']) else 0,
+                            "openInterest": int(row['openInterest']) if 'openInterest' in row and not pd.isna(row['openInterest']) else 0,
+                            "impliedVolatility": float(row['impliedVolatility']) if 'impliedVolatility' in row else 0
+                        }
+                        for _, row in atm_puts.iterrows()
+                    ]
+                }
+        except Exception as e:
+            logger.warning(f"Could not fetch real options for {symbol_upper}: {e}")
+        
+        # Generate synthetic options data as fallback
+        strikes_calls = [round(current_price * (1 + i * 0.025), 2) for i in range(-2, 5)]
+        strikes_puts = [round(current_price * (1 - i * 0.025), 2) for i in range(-2, 5)]
+        
+        return {
+            "symbol": symbol_upper,
+            "currentPrice": round(current_price, 2),
+            "expirationDate": "2026-01-16",
+            "totalExpirations": 19,
+            "dataSource": "synthetic",
+            "calls": [
+                {
+                    "strike": strike,
+                    "lastPrice": round(max(0.1, (current_price - strike) + (strike * 0.05)), 2),
+                    "bid": round(max(0.05, (current_price - strike) + (strike * 0.04)), 2),
+                    "ask": round(max(0.15, (current_price - strike) + (strike * 0.06)), 2),
+                    "volume": int(np.random.randint(100, 5000)),
+                    "openInterest": int(np.random.randint(1000, 10000)),
+                    "impliedVolatility": round(0.25 + np.random.uniform(-0.05, 0.10), 2)
+                }
+                for strike in strikes_calls
+            ],
+            "puts": [
+                {
+                    "strike": strike,
+                    "lastPrice": round(max(0.1, (strike - current_price) + (strike * 0.05)), 2),
+                    "bid": round(max(0.05, (strike - current_price) + (strike * 0.04)), 2),
+                    "ask": round(max(0.15, (strike - current_price) + (strike * 0.06)), 2),
+                    "volume": int(np.random.randint(100, 5000)),
+                    "openInterest": int(np.random.randint(1000, 10000)),
+                    "impliedVolatility": round(0.25 + np.random.uniform(-0.05, 0.10), 2)
+                }
+                for strike in strikes_puts
+            ]
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error fetching options for {symbol}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.get("/api/predictions")
 async def get_predictions():
     """Get real-time stock predictions"""
@@ -173,7 +282,7 @@ async def get_predictions():
                 # Try to fetch real-time data
                 try:
                     ticker = yf.Ticker(symbol)
-                    hist = ticker.history(period="1mo", timeout=3)
+                    hist = ticker.history(period="5d", timeout=10)
                     if not hist.empty:
                         current_price = float(hist['Close'].iloc[-1])
                         logger.info(f"Successfully fetched real data for {symbol}: ${current_price}")
