@@ -285,6 +285,23 @@ services:
     networks:
       - trading-network
 
+  # Options Predictions API
+  options-api:
+    build:
+      context: ./services/data-api
+      dockerfile: Dockerfile
+    container_name: options-api
+    command: python options_api.py
+    ports:
+      - "8004:8004"
+    restart: unless-stopped
+    networks:
+      - trading-network
+    environment:
+      - ALPHA_VANTAGE_KEY=${ALPHA_VANTAGE_KEY}
+      - POLYGON_API_KEY=${POLYGON_API_KEY}
+      - FINNHUB_API_KEY=${FINNHUB_API_KEY}
+
   # Web UI
   ui:
     build:
@@ -298,6 +315,7 @@ services:
       - trading-network
     depends_on:
       - data-api
+      - options-api
 
 networks:
   trading-network:
