@@ -170,10 +170,10 @@ function App() {
     };
 
     try {
-      await axios.get('http://localhost:8001/health', { timeout: 2000 });
-      status.prediction = 'online';
+      await axios.get('http://localhost:8000/health', { timeout: 2000 });
+      status.data = 'online';
     } catch (e) {
-      status.prediction = 'offline';
+      status.data = 'offline';
     }
 
     try {
@@ -183,30 +183,30 @@ function App() {
       status.risk = 'offline';
     }
 
-    // Assume data service is running if container is up
-    status.data = 'online';
+    try {
+      await axios.get('http://localhost:8001/health', { timeout: 2000 });
+      status.prediction = 'online';
+    } catch (e) {
+      status.prediction = 'offline';
+    }
 
     setSystemStatus(status);
   };
 
   const loadRecommendations = async () => {
     try {
-      // Try to fetch from API
-      try {
-        const response = await axios.get('http://localhost:8001/api/predictions', { timeout: 5000 });
-        setRecommendations(response.data);
-        setError(null);
-      } catch (apiError) {
-        // Use mock data if API is not available
-        setRecommendations(mockRecommendations);
-        setError('Using demo data - API services are starting up');
-      }
-      
+      // Fetch real data from data-api service
+      const response = await axios.get('http://localhost:8000/api/predictions', { timeout: 10000 });
+      setRecommendations(response.data);
+      setError(null);
       setLastUpdate(new Date());
       setLoading(false);
-    } catch (err) {
+    } catch (apiError) {
+      console.error('Error fetching real data:', apiError);
+      // Use mock data as fallback
       setRecommendations(mockRecommendations);
-      setError('Using demo data - API services are starting up');
+      setError('Using demo data - Real-time API temporarily unavailable');
+      setLastUpdate(new Date());
       setLoading(false);
     }
   };

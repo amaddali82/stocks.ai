@@ -27,10 +27,10 @@ const SystemStatus = ({ status }) => {
       </h2>
       <div className="grid grid-cols-3 gap-4">
         <div className="flex items-center space-x-3">
-          <div className={`w-3 h-3 rounded-full ${getStatusColor(status.prediction)}`}></div>
+          <div className={`w-3 h-3 rounded-full ${getStatusColor(status.data)}`}></div>
           <div>
-            <div className="text-xs text-gray-500">Prediction Engine</div>
-            <div className="text-sm font-medium">{getStatusText(status.prediction)}</div>
+            <div className="text-xs text-gray-500">Real-Time Data API</div>
+            <div className="text-sm font-medium">{getStatusText(status.data)}</div>
           </div>
         </div>
         <div className="flex items-center space-x-3">
@@ -41,10 +41,10 @@ const SystemStatus = ({ status }) => {
           </div>
         </div>
         <div className="flex items-center space-x-3">
-          <div className={`w-3 h-3 rounded-full ${getStatusColor(status.data)}`}></div>
+          <div className={`w-3 h-3 rounded-full ${getStatusColor(status.prediction)}`}></div>
           <div>
-            <div className="text-xs text-gray-500">Data Ingestion</div>
-            <div className="text-sm font-medium">{getStatusText(status.data)}</div>
+            <div className="text-xs text-gray-500">Prediction Engine</div>
+            <div className="text-sm font-medium">{getStatusText(status.prediction)}</div>
           </div>
         </div>
       </div>

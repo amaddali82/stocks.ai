@@ -273,6 +273,18 @@ services:
     networks:
       - trading-network
 
+  # Real-Time Data API
+  data-api:
+    build:
+      context: ./services/data-api
+      dockerfile: Dockerfile
+    container_name: data-api
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+    networks:
+      - trading-network
+
   # Web UI
   ui:
     build:
@@ -285,9 +297,7 @@ services:
     networks:
       - trading-network
     depends_on:
-      - prediction-engine
-      - order-management
-      - risk-management
+      - data-api
 
 networks:
   trading-network:
