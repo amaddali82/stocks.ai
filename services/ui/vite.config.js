@@ -17,10 +17,15 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api\/risk/, '')
       },
-      '/api/prediction': {
-        target: 'http://prediction-engine:8001',
+      '/api/predictions': {
+        target: 'http://options-api:8004',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api\/prediction/, '')
+        rewrite: (path) => path.replace(/^\/api\/predictions/, '/api/predictions')
+      },
+      '/api/verify': {
+        target: 'http://options-api:8004',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/verify/, '/api/verify')
       },
       '/api/data-api': {
         target: 'http://data-api:8000',

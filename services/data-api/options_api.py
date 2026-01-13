@@ -86,6 +86,16 @@ except ImportError as e:
     NSE_AVAILABLE = False
     logger.warning(f"NSE option chain module not available: {e}")
 
+# Import Twilio SMS notifier
+try:
+    from twilio_notifier import check_and_notify_high_confidence, TWILIO_ENABLED
+    logger.info("✓ Twilio SMS notifications enabled")
+except ImportError as e:
+    TWILIO_ENABLED = False
+    logger.warning(f"Twilio notifier not available: {e}")
+    def check_and_notify_high_confidence(predictions):
+        return 0
+
 app = FastAPI(
     title="Options Trading API",
     description="Top 500 companies from US and India with options predictions (Free data via yfinance)",
@@ -697,7 +707,71 @@ def calculate_atm_strike(spot_price: float) -> float:
     return round(otm_price / strike_interval) * strike_interval
 
 def generate_sample_predictions(limit: int = 20):
-    """Generate predictions with REAL-TIME market prices ONLY - NO HARDCODED PRICES"""
+    """Generate predictions - use database cache first, fallback to real-time if needed"""
+    
+    # Try to get from database first (fast!)
+    try:
+        from database.db_connection import get_db
+        db = get_db()
+        with db.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT symbol, company, market, option_type, strike_price, entry_price,
+                       expiration_date, days_to_expiry, target1, target1_confidence,
+                       target2, target2_confidence, target3, target3_confidence,
+                       overall_confidence, risk_level, implied_volatility, delta,
+                       open_interest, volume, max_profit_potential, breakeven_price,
+                       recommendation, source
+                FROM option_predictions
+                WHERE overall_confidence >= 0.60
+                ORDER BY overall_confidence DESC, days_to_expiry ASC
+                LIMIT %s
+            """, (limit * 2,))
+            
+            rows = cursor.fetchall()
+            cursor.close()
+            
+            if len(rows) > 0:
+                logger.info(f"Returning {len(rows)} predictions from database")
+                predictions = []
+                for row in rows:
+                    predictions.append({
+                        "symbol": row[0],
+                        "company": row[1],
+                        "market": row[2],
+                        "option_type": row[3],
+                        "strike_price": float(row[4]) if row[4] else 0,
+                        "entry_price": float(row[5]) if row[5] else 0,
+                        "expiration_date": str(row[6]),
+                        "days_to_expiry": int(row[7]) if row[7] else 0,
+                        "target1": float(row[8]) if row[8] else 0,
+                        "target1_confidence": float(row[9]) if row[9] else 0,
+                        "target2": float(row[10]) if row[10] else 0,
+                        "target2_confidence": float(row[11]) if row[11] else 0,
+                        "target3": float(row[12]) if row[12] else 0,
+                        "target3_confidence": float(row[13]) if row[13] else 0,
+                        "overall_confidence": float(row[14]) if row[14] else 0,
+                        "risk_level": row[15],
+                        "implied_volatility": float(row[16]) if row[16] else 0,
+                        "delta": float(row[17]) if row[17] else 0,
+                        "open_interest": int(row[18]) if row[18] else 0,
+                        "volume": int(row[19]) if row[19] else 0,
+                        "max_profit_potential": float(row[20]) if row[20] else 0,
+                        "breakeven_price": float(row[21]) if row[21] else 0,
+                        "recommendation": row[22],
+                        "source": row[23] if row[23] else "Database"
+                    })
+                
+                return {
+                    "total": len(predictions),
+                    "predictions": predictions[:limit],
+                    "source": "database",
+                    "note": "Data from database cache"
+                }
+    except Exception as e:
+        logger.warning(f"Database query failed, falling back to live data: {e}")
+    
+    # Fallback to live data fetch (slow)
     sample_data = []
     
     # US Stock samples - Top 10 most liquid (fetch real-time prices ONLY)
@@ -980,6 +1054,14 @@ async def get_high_confidence_predictions(
         
         # Sort by confidence descending
         high_conf = sorted(high_conf, key=lambda x: x['overall_confidence'], reverse=True)[:limit]
+        
+        # Check for 90%+ confidence and send SMS notifications
+        try:
+            notifications_sent = check_and_notify_high_confidence(high_conf)
+            if notifications_sent > 0:
+                logger.info(f"📱 Sent {notifications_sent} SMS alert(s) for 90%+ confidence trades")
+        except Exception as e:
+            logger.warning(f"Failed to send SMS notifications: {e}")
         
         return {
             "total": len(high_conf),

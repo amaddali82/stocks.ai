@@ -56,13 +56,18 @@ class OptionRepository:
         """Insert option prediction data"""
         query = """
         INSERT INTO option_predictions
-        (time, symbol, option_type, strike_price, expiration_date,
-         target1, target1_confidence, target2, target2_confidence,
+        (time, symbol, company, market, option_type, strike_price, entry_price, expiration_date,
+         days_to_expiry, target1, target1_confidence, target2, target2_confidence,
          target3, target3_confidence, recommendation, overall_confidence,
-         risk_level, implied_volatility, delta, open_interest, volume)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+         risk_level, implied_volatility, delta, open_interest, volume,
+         max_profit_potential, breakeven_price, source)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         ON CONFLICT (time, symbol, option_type, strike_price, expiration_date)
         DO UPDATE SET
+            company = EXCLUDED.company,
+            market = EXCLUDED.market,
+            entry_price = EXCLUDED.entry_price,
+            days_to_expiry = EXCLUDED.days_to_expiry,
             target1 = EXCLUDED.target1,
             target1_confidence = EXCLUDED.target1_confidence,
             target2 = EXCLUDED.target2,
@@ -75,7 +80,10 @@ class OptionRepository:
             implied_volatility = EXCLUDED.implied_volatility,
             delta = EXCLUDED.delta,
             open_interest = EXCLUDED.open_interest,
-            volume = EXCLUDED.volume
+            volume = EXCLUDED.volume,
+            max_profit_potential = EXCLUDED.max_profit_potential,
+            breakeven_price = EXCLUDED.breakeven_price,
+            source = EXCLUDED.source
         """
         
         try:
@@ -87,9 +95,13 @@ class OptionRepository:
             self.db.execute_insert(query, (
                 prediction.get('time', datetime.now()),
                 prediction['symbol'],
+                prediction.get('company', ''),
+                prediction.get('market', 'US'),
                 prediction['option_type'],
                 prediction['strike_price'],
+                prediction.get('entry_price', 0),
                 exp_date,
+                prediction.get('days_to_expiry', 0),
                 prediction['target1'],
                 prediction['target1_confidence'],
                 prediction['target2'],
@@ -102,7 +114,10 @@ class OptionRepository:
                 prediction.get('implied_volatility', 0),
                 prediction.get('delta', 0),
                 prediction.get('open_interest', 0),
-                prediction.get('volume', 0)
+                prediction.get('volume', 0),
+                prediction.get('max_profit_potential', 0),
+                prediction.get('breakeven_price', 0),
+                prediction.get('source', 'API')
             ))
             return True
         except Exception as e:

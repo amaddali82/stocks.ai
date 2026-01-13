@@ -14,9 +14,9 @@ export default function TradingLayout({ children, activeView, onViewChange, veri
   ];
 
   return (
-    <div className="h-screen flex flex-col bg-[#0f1419]">
+    <div className="h-screen flex flex-col bg-gray-50">
       {/* Top Header - Zerodha/E*TRADE style */}
-      <header className="bg-[#1a1f2e] border-b border-gray-800 px-6 py-3">
+      <header className="bg-white border-b border-gray-200 px-6 py-3 shadow-sm">
         <div className="flex items-center justify-between">
           {/* Logo and Brand */}
           <div className="flex items-center gap-8">
@@ -24,7 +24,7 @@ export default function TradingLayout({ children, activeView, onViewChange, veri
               <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
                 <TrendingUp className="w-5 h-5 text-white" />
               </div>
-              <span className="text-xl font-bold text-white">Stocks.AI</span>
+              <span className="text-xl font-bold text-gray-900">Stocks.AI</span>
             </div>
             
             {/* Navigation */}
@@ -35,8 +35,8 @@ export default function TradingLayout({ children, activeView, onViewChange, veri
                   onClick={() => onViewChange(item.id)}
                   className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
                     activeView === item.id
-                      ? 'bg-blue-600 text-white'
-                      : 'text-gray-400 hover:text-white hover:bg-gray-800'
+                      ? 'bg-blue-600 text-white shadow-md'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
                   }`}
                 >
                   <item.icon className="w-4 h-4" />
@@ -50,34 +50,34 @@ export default function TradingLayout({ children, activeView, onViewChange, veri
           <div className="flex items-center gap-4">
             {/* Search */}
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
                 type="text"
                 placeholder="Search symbols..."
-                className="bg-gray-800 border border-gray-700 rounded-lg pl-10 pr-4 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 w-64"
+                className="bg-gray-50 border border-gray-300 rounded-lg pl-10 pr-4 py-2 text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:border-blue-500 w-64"
               />
             </div>
 
             {/* Verification Status */}
             {verificationStatus && (
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-green-500/10 border border-green-500/30 rounded-lg">
-                <CheckCircle className="w-4 h-4 text-green-500" />
-                <span className="text-xs text-green-400">Data Verified</span>
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 border border-green-200 rounded-lg">
+                <CheckCircle className="w-4 h-4 text-green-600" />
+                <span className="text-xs text-green-700">Data Verified</span>
               </div>
             )}
 
             {/* Notifications */}
-            <button className="p-2 hover:bg-gray-800 rounded-lg transition-colors relative">
-              <Bell className="w-5 h-5 text-gray-400" />
+            <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors relative">
+              <Bell className="w-5 h-5 text-gray-600" />
               <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
             </button>
 
             {/* User */}
-            <button className="flex items-center gap-2 px-3 py-1.5 hover:bg-gray-800 rounded-lg transition-colors">
+            <button className="flex items-center gap-2 px-3 py-1.5 hover:bg-gray-100 rounded-lg transition-colors">
               <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
                 <User className="w-4 h-4 text-white" />
               </div>
-              <span className="text-sm text-gray-300">Account</span>
+              <span className="text-sm text-gray-700">Account</span>
             </button>
           </div>
         </div>
@@ -89,8 +89,8 @@ export default function TradingLayout({ children, activeView, onViewChange, veri
       </main>
 
       {/* Bottom Status Bar */}
-      <footer className="bg-[#1a1f2e] border-t border-gray-800 px-6 py-2">
-        <div className="flex items-center justify-between text-xs text-gray-500">
+      <footer className="bg-white border-t border-gray-200 px-6 py-2">
+        <div className="flex items-center justify-between text-xs text-gray-600">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 bg-green-500 rounded-full"></div>
@@ -102,8 +102,8 @@ export default function TradingLayout({ children, activeView, onViewChange, veri
           <div className="flex items-center gap-4">
             <span>Last updated: {new Date().toLocaleTimeString()}</span>
             <div className="flex items-center gap-1">
-              <Shield className="w-3 h-3 text-green-500" />
-              <span className="text-green-500">Secure Connection</span>
+              <Shield className="w-3 h-3 text-green-600" />
+              <span className="text-green-600">Secure Connection</span>
             </div>
           </div>
         </div>
